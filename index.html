@@ -1,0 +1,3487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel & Lifestyle Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        
+        :root {
+            --neon-green: #00ff88;
+            --neon-blue: #00b4d8;
+            --neon-purple: #9d00ff;
+            --matrix-green: #0aff0a;
+            --cyber-dark: #0a0a1a;
+            --cyber-darker: #050510;
+            --terminal-bg: rgba(5, 5, 15, 0.95);
+            --terminal-border: rgba(0, 255, 136, 0.3);
+            --hacker-red: #ff003c;
+            --hacker-yellow: #ffdd00;
+            --hacker-cyan: #00ffff;
+            --glow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+            --subtle-glow: 0 0 5px currentColor, 0 0 10px currentColor;
+        }
+        
+        body {
+            background: var(--cyber-darker);
+            color: var(--neon-green);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Matrix Background */
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            pointer-events: none;
+        }
+        
+        /* Terminal Scan Line */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--neon-green), transparent);
+            box-shadow: var(--glow);
+            z-index: 98;
+            animation: scan 3s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            padding-bottom: 5px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            padding: 15px;
+            background: rgba(5, 5, 15, 0.7);
+            border-radius: 15px;
+            border: 1px solid var(--terminal-border);
+            box-shadow: var(--subtle-glow);
+            overflow: hidden;
+            animation: terminalGlow 2s infinite alternate;
+        }
+        
+        @keyframes terminalGlow {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.3), inset 0 0 10px rgba(0, 255, 136, 0.1); }
+            100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6), inset 0 0 20px rgba(0, 255, 136, 0.2); }
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            animation: headerScan 3s linear infinite;
+        }
+        
+        @keyframes headerScan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, var(--neon-green), var(--hacker-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: var(--glow);
+            letter-spacing: 2px;
+            font-weight: 700;
+            position: relative;
+            animation: textFlicker 3s infinite alternate;
+        }
+        
+        @keyframes textFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+            }
+            20%, 24%, 55% {
+                opacity: 0.8;
+            }
+        }
+        
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            color: var(--hacker-cyan);
+            text-shadow: 0 0 5px var(--hacker-cyan);
+        }
+        
+        .content {
+            display: none;
+            background: var(--terminal-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--terminal-border);
+            opacity: 0;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        .content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, var(--neon-green), var(--neon-blue), var(--neon-purple));
+            box-shadow: var(--glow);
+            z-index: 1;
+        }
+        
+        .content.active {
+            display: block;
+            opacity: 1;
+            animation: terminalBoot 0.6s ease forwards;
+            transform: translateY(0) rotateX(0);
+        }
+        
+        @keyframes terminalBoot {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) rotateX(-10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) rotateX(0);
+            }
+        }
+        
+        .content h2 {
+            color: var(--neon-green);
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+            text-shadow: var(--subtle-glow);
+            font-size: 1.5rem;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--neon-green);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--hacker-cyan);
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px var(--hacker-cyan);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 5px;
+            font-size: 1rem;
+            background: rgba(10, 20, 30, 0.8);
+            color: var(--neon-green);
+            transition: all 0.3s ease;
+            font-family: 'Consolas', monospace;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5), inset 0 0 10px rgba(0, 255, 136, 0.1);
+            outline: none;
+            transform: translateY(-2px);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            border: none;
+            padding: 14px;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+        }
+        
+        .item-list {
+            margin-top: 20px;
+        }
+        
+        .item {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--neon-green);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .item:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+            border-left-color: var(--hacker-cyan);
+        }
+        
+        .item.high-priority {
+            border-left-color: var(--hacker-red);
+        }
+        
+        .item.medium-priority {
+            border-left-color: var(--hacker-yellow);
+        }
+        
+        .item.low-priority {
+            border-left-color: var(--neon-green);
+        }
+        
+        .item h3 {
+            margin-bottom: 8px;
+            color: var(--hacker-cyan);
+            position: relative;
+            z-index: 1;
+            font-size: 1.1rem;
+        }
+        
+        .item p {
+            color: #a0ffc0;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .item .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #80ffaa;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, var(--hacker-red), #cc0030);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+            width: auto;
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #ff003c, #ff3366);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.8);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #80ffaa;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--neon-green);
+        }
+        
+        .empty-state p {
+            font-size: 1rem;
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+        
+        .timeline {
+            position: relative;
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--neon-green), transparent);
+            box-shadow: var(--subtle-glow);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 8px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            z-index: 2;
+            box-shadow: var(--subtle-glow);
+        }
+        
+        .timeline-date {
+            font-weight: 600;
+            color: var(--hacker-cyan);
+            margin-bottom: 5px;
+            text-shadow: var(--subtle-glow);
+            font-size: 0.9rem;
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        
+        .calendar-day {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            min-height: 50px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .calendar-day:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .calendar-day.active {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            box-shadow: var(--subtle-glow);
+        }
+        
+        .calendar-day.has-event:after {
+            content: '●';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--hacker-cyan);
+            text-shadow: var(--subtle-glow);
+        }
+        
+        .search-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .badge {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: calc(50% - 10px);
+        }
+        
+        .badge:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
+        }
+        
+        .badge i {
+            font-size: 1.2rem;
+        }
+        
+        .journal-entry {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .journal-entry:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+        }
+        
+        .journal-date {
+            font-weight: bold;
+            color: var(--hacker-cyan);
+            margin-bottom: 10px;
+            text-shadow: var(--subtle-glow);
+            font-size: 0.9rem;
+        }
+        
+        .mood-selector {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .mood-option {
+            flex: 1;
+            min-width: calc(33% - 8px);
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(10, 20, 30, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mood-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .mood-option.active {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            box-shadow: var(--subtle-glow);
+        }
+        
+        /* TOURIST SPOTS STYLES */
+        .region-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .region-btn {
+            background: rgba(10, 20, 30, 0.8);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--hacker-cyan);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .region-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+            border-color: var(--neon-green);
+        }
+        
+        .region-btn.active {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            box-shadow: var(--subtle-glow);
+        }
+        
+        .spot-card {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid var(--terminal-border);
+            transition: all 0.3s ease;
+        }
+        
+        .spot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            border-color: var(--neon-green);
+        }
+        
+        .spot-image {
+            height: 180px;
+            width: 100%;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .spot-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(5, 5, 15, 0.9));
+            padding: 15px;
+            color: white;
+        }
+        
+        .spot-content {
+            padding: 15px;
+        }
+        
+        .spot-title {
+            font-size: 1.1rem;
+            color: var(--hacker-cyan);
+            margin-bottom: 8px;
+            text-shadow: var(--subtle-glow);
+        }
+        
+        .spot-description {
+            font-size: 0.9rem;
+            color: #a0ffc0;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .spot-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .spot-tag {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #80ffaa;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+        }
+        
+        .spot-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .add-to-plan-btn {
+            flex: 1;
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .add-to-plan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(157, 0, 255, 0.5);
+        }
+        
+        .view-more-btn {
+            flex: 1;
+            background: rgba(10, 20, 30, 0.8);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .view-more-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .top-spots-container {
+            margin-top: 20px;
+        }
+        
+        .spot-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #80ffaa;
+            margin-top: 8px;
+        }
+        
+        /* NEW TRAVEL FEATURES */
+        .converter-container {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--terminal-border);
+        }
+        
+        .currency-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .currency-row input {
+            flex: 1;
+        }
+        
+        .currency-row select {
+            width: 120px;
+        }
+        
+        .currency-result {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--neon-green);
+            margin-top: 10px;
+        }
+        
+        .phrase-category {
+            margin-bottom: 20px;
+        }
+        
+        .phrase-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .phrase-table th, .phrase-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .phrase-table th {
+            color: var(--hacker-cyan);
+            font-weight: 600;
+        }
+        
+        .phrase-table tr:hover {
+            background: rgba(0, 255, 136, 0.05);
+        }
+        
+        .budget-category {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--neon-blue);
+        }
+        
+        .budget-total {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+            color: var(--cyber-darker);
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .festival-card {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--neon-purple);
+        }
+        
+        .countdown-timer {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .countdown-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .countdown-unit {
+            background: rgba(5, 5, 15, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 60px;
+        }
+        
+        .countdown-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--neon-green);
+        }
+        
+        .countdown-label {
+            font-size: 0.7rem;
+            color: #80ffaa;
+        }
+        
+        .packing-template {
+            background: rgba(10, 20, 30, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .packing-template:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        /* PROFILE SPECIFIC STYLES */
+        .profile-avatar:hover {
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+        }
+        
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preference-checkbox, .language-checkbox {
+            margin-right: 8px;
+            accent-color: var(--neon-green);
+            transform: scale(1.2);
+        }
+        
+        .stat-item {
+            background: rgba(5, 5, 15, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--terminal-border);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        /* Bottom Navigation - Cyberpunk Style */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(5, 5, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--terminal-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 100;
+            box-shadow: 0 -5px 30px rgba(0, 255, 136, 0.2);
+            overflow-x: auto;
+        }
+        
+        .bottom-nav::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--neon-green), transparent);
+            box-shadow: var(--subtle-glow);
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 5px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            color: #80ffaa;
+            flex: 1;
+            min-width: 60px;
+            max-width: 70px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-size: 0.7rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-btn i {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 60%;
+            height: 2px;
+            background: var(--neon-green);
+            box-shadow: var(--subtle-glow);
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-btn.active {
+            color: var(--neon-green);
+            transform: translateY(-10px);
+        }
+        
+        .nav-btn.active i {
+            color: var(--neon-green);
+        }
+        
+        .nav-btn.active::before {
+            transform: translateX(-50%) scaleX(1);
+        }
+        
+        .nav-btn:hover:not(.active) {
+            color: var(--hacker-cyan);
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 360px) {
+            .container {
+                padding: 10px;
+                padding-bottom: 5px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            header h1 {
+                font-size: 1.4rem;
+            }
+            
+            .nav-btn span {
+                font-size: 0.65rem;
+            }
+            
+            .nav-btn i {
+                font-size: 1rem;
+            }
+            
+            .region-selector {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            
+            .nav-btn {
+                min-width: 55px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            
+            .bottom-nav {
+                max-width: 750px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-radius: 15px 15px 0 0;
+                bottom: 10px;
+                padding: 12px 5px;
+            }
+            
+            .spot-card {
+                display: flex;
+            }
+            
+            .spot-image {
+                width: 200px;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Background -->
+    <canvas class="matrix-bg" id="matrixCanvas"></canvas>
+    
+    <!-- Terminal Scan Line -->
+    <div class="scan-line"></div>
+    
+    <div class="container">
+        <header>
+            <h1>TRAVEL & LIFESTYLE <span style="color: var(--hacker-cyan);">PLANNER</span></h1>
+        </header>
+        
+        <!-- Schedules Tab -->
+        <div class="content active" id="schedules">
+            <h2>> DAILY SCHEDULES</h2>
+            <form id="schedule-form">
+                <div class="form-group">
+                    <label for="schedule-title">>> ACTIVITY</label>
+                    <input type="text" id="schedule-title" placeholder="e.g., Morning Yoga, Work Meeting" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-date">>> DATE</label>
+                    <input type="date" id="schedule-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-time">>> TIME</label>
+                    <input type="time" id="schedule-time" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-duration">>> DURATION (MINUTES)</label>
+                    <input type="number" id="schedule-duration" placeholder="e.g., 60" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-location">>> LOCATION</label>
+                    <input type="text" id="schedule-location" placeholder="e.g., Tokyo, Japan">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-priority">>> PRIORITY LEVEL</label>
+                    <select id="schedule-priority">
+                        <option value="low">LOW</option>
+                        <option value="medium" selected>MEDIUM</option>
+                        <option value="high">HIGH</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-notes">>> NOTES</label>
+                    <textarea id="schedule-notes" placeholder="Additional details..."></textarea>
+                </div>
+                <button type="submit">> ADD SCHEDULE</button>
+            </form>
+            
+            <div class="item-list" id="schedules-list">
+                <!-- Schedules will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Goals Tab -->
+        <div class="content" id="goals">
+            <h2>> LIFE GOALS</h2>
+            <form id="goal-form">
+                <div class="form-group">
+                    <label for="goal-title">>> GOAL</label>
+                    <input type="text" id="goal-title" placeholder="e.g., Learn Spanish, Visit Japan" required>
+                </div>
+                <div class="form-group">
+                    <label for="goal-category">>> CATEGORY</label>
+                    <select id="goal-category">
+                        <option value="travel">TRAVEL</option>
+                        <option value="health">HEALTH & FITNESS</option>
+                        <option value="career">CAREER</option>
+                        <option value="personal">PERSONAL GROWTH</option>
+                        <option value="financial">FINANCIAL</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="goal-deadline">>> TARGET DATE</label>
+                    <input type="date" id="goal-deadline" required>
+                </div>
+                <div class="form-group">
+                    <label for="goal-priority">>> PRIORITY LEVEL</label>
+                    <select id="goal-priority">
+                        <option value="low">LOW</option>
+                        <option value="medium" selected>MEDIUM</option>
+                        <option value="high">HIGH</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="goal-location">>> LOCATION (IF TRAVEL)</label>
+                    <input type="text" id="goal-location" placeholder="e.g., Paris, France">
+                </div>
+                <div class="form-group">
+                    <label for="goal-notes">>> ACTION PLAN</label>
+                    <textarea id="goal-notes" placeholder="Steps to achieve this goal..."></textarea>
+                </div>
+                <button type="submit">> ADD GOAL</button>
+            </form>
+            
+            <div class="item-list" id="goals-list">
+                <!-- Goals will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Timeline Tab -->
+        <div class="content" id="timeline">
+            <h2>> MISSION TIMELINE</h2>
+            <div class="timeline" id="timeline-list">
+                <!-- Timeline items will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Calendar Tab -->
+        <div class="content" id="calendar">
+            <h2>> CALENDAR VIEW</h2>
+            <div class="calendar" id="calendar-view">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+        
+        <!-- Packing Tab -->
+        <div class="content" id="packing">
+            <h2>> PACKING CHECKLIST</h2>
+            
+            <div class="form-group">
+                <label>> PACKING TEMPLATES</label>
+                <div class="item-list" id="packing-templates">
+                    <!-- Packing templates will be here -->
+                </div>
+            </div>
+            
+            <form id="packing-form">
+                <div class="form-group">
+                    <label for="packing-item">>> ADD ITEM</label>
+                    <input type="text" id="packing-item" placeholder="e.g., Passport, Charger, Medicine" required>
+                </div>
+                <div class="form-group">
+                    <label for="packing-category">>> CATEGORY</label>
+                    <select id="packing-category">
+                        <option value="essentials">ESSENTIALS</option>
+                        <option value="clothing">CLOTHING</option>
+                        <option value="electronics">ELECTRONICS</option>
+                        <option value="toiletries">TOILETRIES</option>
+                        <option value="documents">DOCUMENTS</option>
+                        <option value="other">OTHER</option>
+                    </select>
+                </div>
+                <button type="submit">> ADD TO CHECKLIST</button>
+            </form>
+            
+            <div class="item-list" id="packing-list">
+                <!-- Packing items will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Journal Tab -->
+        <div class="content" id="journal">
+            <h2>> DAILY JOURNAL</h2>
+            <form id="journal-form">
+                <div class="form-group">
+                    <label for="journal-date">>> DATE</label>
+                    <input type="date" id="journal-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="journal-title">>> TITLE</label>
+                    <input type="text" id="journal-title" placeholder="e.g., Amazing Day in Tokyo" required>
+                </div>
+                <div class="form-group">
+                    <label>> MOOD</label>
+                    <div class="mood-selector">
+                        <div class="mood-option" data-mood="happy">😊 HAPPY</div>
+                        <div class="mood-option" data-mood="neutral">😐 NEUTRAL</div>
+                        <div class="mood-option" data-mood="sad">😔 SAD</div>
+                        <div class="mood-option" data-mood="excited">🤩 EXCITED</div>
+                        <div class="mood-option" data-mood="tired">😴 TIRED</div>
+                    </div>
+                    <input type="hidden" id="journal-mood" value="neutral">
+                </div>
+                <div class="form-group">
+                    <label for="journal-entry">>> TODAYS REFLECTION</label>
+                    <textarea id="journal-entry" placeholder="What happened today? What did you learn?..." required></textarea>
+                </div>
+                <button type="submit">> SAVE LOG ENTRY</button>
+            </form>
+            
+            <div class="item-list" id="journal-list">
+                <!-- Journal entries will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Tourist Spots Tab -->
+        <div class="content" id="tourist-spots">
+            <h2>> PHILIPPINE TOURIST SPOTS</h2>
+            
+            <div class="form-group">
+                <label>> SEARCH DESTINATION</label>
+                <input type="text" id="spot-search" placeholder=">> SEARCH BY LOCATION OR SPOT NAME...">
+            </div>
+            
+            <div class="region-selector" id="region-filter">
+                <button class="region-btn active" data-region="all">ALL REGIONS</button>
+                <button class="region-btn" data-region="top">TOP PICKS</button>
+                <button class="region-btn" data-region="luzon">LUZON</button>
+                <button class="region-btn" data-region="visayas">VISAYAS</button>
+                <button class="region-btn" data-region="mindanao">MINDANAO</button>
+                <button class="region-btn" data-region="beach">BEACHES</button>
+                <button class="region-btn" data-region="mountain">MOUNTAINS</button>
+                <button class="region-btn" data-region="historical">HISTORICAL</button>
+            </div>
+            
+            <div class="top-spots-container">
+                <h3 style="margin: 20px 0 15px 0; color: var(--hacker-cyan);">> TOP DESTINATIONS IN PHILIPPINES</h3>
+                <div id="tourist-spots-list">
+                    <!-- Tourist spots will be displayed here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Budget & Currency Tab -->
+        <div class="content" id="budget">
+            <h2>> TRAVEL BUDGET & CURRENCY</h2>
+            
+            <!-- Currency Converter -->
+            <div class="converter-container">
+                <h3 style="color: var(--hacker-cyan); margin-bottom: 15px;">>> CURRENCY CONVERTER</h3>
+                <div class="currency-row">
+                    <input type="number" id="amount-input" placeholder="Amount" value="1000" min="0">
+                    <select id="from-currency">
+                        <option value="PHP">🇵🇭 PHP - Philippine Peso</option>
+                        <option value="USD">🇺🇸 USD - US Dollar</option>
+                        <option value="EUR">🇪🇺 EUR - Euro</option>
+                        <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+                        <option value="KRW">🇰🇷 KRW - Korean Won</option>
+                        <option value="SGD">🇸🇬 SGD - Singapore Dollar</option>
+                        <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                    </select>
+                </div>
+                
+                <div style="text-align: center; margin: 10px;">
+                    <i class="fas fa-exchange-alt" style="color: var(--neon-green); font-size: 1.5rem;"></i>
+                </div>
+                
+                <div class="currency-row">
+                    <input type="text" id="converted-amount" placeholder="Converted Amount" readonly>
+                    <select id="to-currency">
+                        <option value="PHP">🇵🇭 PHP - Philippine Peso</option>
+                        <option value="USD" selected>🇺🇸 USD - US Dollar</option>
+                        <option value="EUR">🇪🇺 EUR - Euro</option>
+                        <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+                        <option value="KRW">🇰🇷 KRW - Korean Won</option>
+                        <option value="SGD">🇸🇬 SGD - Singapore Dollar</option>
+                        <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                    </select>
+                </div>
+                
+                <div class="currency-result" id="conversion-result">
+                    >> CONVERSION READY
+                </div>
+                
+                <button onclick="convertCurrency()" style="margin-top: 15px;">> CONVERT CURRENCY</button>
+            </div>
+            
+            <!-- Budget Tracker -->
+            <div style="margin-top: 30px;">
+                <h3 style="color: var(--hacker-cyan); margin-bottom: 15px;">>> TRAVEL BUDGET TRACKER</h3>
+                <form id="budget-form">
+                    <div class="form-group">
+                        <label for="budget-category">>> CATEGORY</label>
+                        <select id="budget-category">
+                            <option value="accommodation">🏨 ACCOMMODATION</option>
+                            <option value="food">🍔 FOOD & DRINKS</option>
+                            <option value="transportation">🚗 TRANSPORTATION</option>
+                            <option value="activities">🎭 ACTIVITIES</option>
+                            <option value="shopping">🛍️ SHOPPING</option>
+                            <option value="emergency">🚨 EMERGENCY FUND</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-amount">>> AMOUNT (PHP)</label>
+                        <input type="number" id="budget-amount" placeholder="e.g., 5000" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-notes">>> NOTES</label>
+                        <input type="text" id="budget-notes" placeholder="e.g., Hotel in Boracay">
+                    </div>
+                    <button type="submit">> ADD TO BUDGET</button>
+                </form>
+                
+                <div class="item-list" id="budget-list">
+                    <!-- Budget items will be displayed here -->
+                </div>
+                
+                <div class="budget-total" id="budget-total">
+                    >> TOTAL BUDGET: ₱0.00
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Tab -->
+        <div class="content" id="profile">
+            <h2>> USER PROFILE</h2>
+            
+            <div class="profile-header" style="text-align: center; margin-bottom: 30px;">
+                <div class="profile-avatar" id="profile-avatar" style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-green), var(--neon-blue)); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; box-shadow: var(--glow); position: relative; overflow: hidden;">
+                    <span id="avatar-text">👤</span>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                </div>
+                <h3 id="profile-name-display" style="color: var(--hacker-cyan);">TRAVELER</h3>
+                <p id="profile-title-display" style="color: #80ffaa; font-size: 0.9rem;">Adventure Seeker</p>
+            </div>
+            
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="profile-name">>> FULL NAME</label>
+                    <input type="text" id="profile-name" placeholder="e.g., Alex Rivera">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-username">>> USERNAME</label>
+                    <input type="text" id="profile-username" placeholder="e.g., travel_explorer">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-birthday">>> BIRTHDAY</label>
+                    <input type="date" id="profile-birthday">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-email">>> EMAIL</label>
+                    <input type="email" id="profile-email" placeholder="e.g., traveler@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-phone">>> PHONE</label>
+                    <input type="tel" id="profile-phone" placeholder="e.g., +63 912 345 6789">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-location">>> HOME LOCATION</label>
+                    <input type="text" id="profile-location" placeholder="e.g., Manila, Philippines">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-title">>> TRAVEL TITLE</label>
+                    <select id="profile-title">
+                        <option value="Adventure Seeker">Adventure Seeker</option>
+                        <option value="Luxury Traveler">Luxury Traveler</option>
+                        <option value="Budget Explorer">Budget Explorer</option>
+                        <option value="Cultural Enthusiast">Cultural Enthusiast</option>
+                        <option value="Foodie Traveler">Foodie Traveler</option>
+                        <option value="Digital Nomad">Digital Nomad</option>
+                        <option value="Solo Traveler">Solo Traveler</option>
+                        <option value="Family Adventurer">Family Adventurer</option>
+                        <option value="Backpacker">Backpacker</option>
+                        <option value="Custom">Custom Title</option>
+                    </select>
+                    <input type="text" id="profile-title-custom" placeholder="Enter custom title" style="margin-top: 10px; display: none;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-bio">>> BIOGRAPHY</label>
+                    <textarea id="profile-bio" placeholder="Tell us about your travel experiences and preferences..." rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>> TRAVEL PREFERENCES</label>
+                    <div class="preferences-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-beach" class="preference-checkbox"> 🏖️ Beach
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-mountain" class="preference-checkbox"> ⛰️ Mountain
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-city" class="preference-checkbox"> 🏙️ City
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-culture" class="preference-checkbox"> 🎭 Culture
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-food" class="preference-checkbox"> 🍜 Food
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-adventure" class="preference-checkbox"> 🪂 Adventure
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-relax" class="preference-checkbox"> 😌 Relaxation
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="pref-history" class="preference-checkbox"> 🏛️ History
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-level">>> TRAVEL LEVEL</label>
+                    <select id="profile-level">
+                        <option value="beginner">🌱 Beginner Traveler (0-5 trips)</option>
+                        <option value="intermediate">🚀 Intermediate Traveler (6-15 trips)</option>
+                        <option value="advanced">✈️ Advanced Traveler (16+ trips)</option>
+                        <option value="expert">🏆 Expert Globetrotter (30+ countries)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-passport">>> PASSPORT NUMBER</label>
+                    <input type="text" id="profile-passport" placeholder="e.g., P12345678">
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-currency">>> PREFERRED CURRENCY</label>
+                    <select id="profile-currency">
+                        <option value="PHP">🇵🇭 Philippine Peso (PHP)</option>
+                        <option value="USD">🇺🇸 US Dollar (USD)</option>
+                        <option value="EUR">🇪🇺 Euro (EUR)</option>
+                        <option value="JPY">🇯🇵 Japanese Yen (JPY)</option>
+                        <option value="KRW">🇰🇷 Korean Won (KRW)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-language">>> PREFERRED LANGUAGES</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="english" class="language-checkbox"> English
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="filipino" class="language-checkbox"> Filipino
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="spanish" class="language-checkbox"> Spanish
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="japanese" class="language-checkbox"> Japanese
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="korean" class="language-checkbox"> Korean
+                        </label>
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" name="language" value="chinese" class="language-checkbox"> Chinese
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" style="background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));">> SAVE PROFILE</button>
+            </form>
+            
+            <div style="margin-top: 30px; padding: 20px; background: rgba(10, 20, 30, 0.8); border-radius: 10px;">
+                <h3 style="color: var(--hacker-cyan); margin-bottom: 15px;">>> PROFILE STATS</h3>
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div class="stat-item" style="text-align: center;">
+                        <div style="font-size: 1.5rem; color: var(--neon-green); font-weight: bold;" id="stat-goals">0</div>
+                        <div style="font-size: 0.8rem; color: #80ffaa;">GOALS</div>
+                    </div>
+                    <div class="stat-item" style="text-align: center;">
+                        <div style="font-size: 1.5rem; color: var(--hacker-cyan); font-weight: bold;" id="stat-trips">0</div>
+                        <div style="font-size: 0.8rem; color: #80ffaa;">TRIPS PLANNED</div>
+                    </div>
+                    <div class="stat-item" style="text-align: center;">
+                        <div style="font-size: 1.5rem; color: var(--hacker-yellow); font-weight: bold;" id="stat-achievements">0</div>
+                        <div style="font-size: 0.8rem; color: #80ffaa;">BADGES</div>
+                    </div>
+                    <div class="stat-item" style="text-align: center;">
+                        <div style="font-size: 1.5rem; color: var(--neon-purple); font-weight: bold;" id="stat-journal">0</div>
+                        <div style="font-size: 0.8rem; color: #80ffaa;">JOURNAL ENTRIES</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="exportProfileData()" style="background: linear-gradient(135deg, #ff6b6b, #ff8e53); margin-right: 10px;">> EXPORT PROFILE DATA</button>
+                <button onclick="resetProfile()" style="background: linear-gradient(135deg, #ff003c, #cc0030);">> RESET PROFILE</button>
+            </div>
+        </div>
+        
+        <!-- Achievements Tab -->
+        <div class="content" id="achievements">
+            <h2>> ACHIEVEMENTS & BADGES</h2>
+            <div class="badge-container" id="badges-list">
+                <!-- Badges will be displayed here -->
+            </div>
+        </div>
+        
+        <!-- Search Tab -->
+        <div class="content" id="search">
+            <h2>> DATABASE SEARCH</h2>
+            <div class="search-filter">
+                <input type="text" id="search-input" placeholder=">> SEARCH QUERY...">
+                <select id="search-category">
+                    <option value="all">ALL CATEGORIES</option>
+                    <option value="schedules">SCHEDULES</option>
+                    <option value="goals">GOALS</option>
+                    <option value="journal">JOURNAL</option>
+                    <option value="budget">BUDGET</option>
+                    <option value="packing">PACKING</option>
+                </select>
+            </div>
+            <div class="search-filter">
+                <select id="filter-priority">
+                    <option value="all">ALL PRIORITIES</option>
+                    <option value="high">HIGH PRIORITY</option>
+                    <option value="medium">MEDIUM PRIORITY</option>
+                    <option value="low">LOW PRIORITY</option>
+                </select>
+                <select id="filter-status">
+                    <option value="all">ALL STATUS</option>
+                    <option value="completed">COMPLETED</option>
+                    <option value="in-progress">IN PROGRESS</option>
+                </select>
+            </div>
+            
+            <div class="item-list" id="search-results">
+                <!-- Search results will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-btn active" data-tab="schedules">
+            <i class="fas fa-calendar-alt"></i>
+            <span>SCHEDULES</span>
+        </button>
+        <button class="nav-btn" data-tab="goals">
+            <i class="fas fa-bullseye"></i>
+            <span>GOALS</span>
+        </button>
+        <button class="nav-btn" data-tab="timeline">
+            <i class="fas fa-stream"></i>
+            <span>TIMELINE</span>
+        </button>
+        <button class="nav-btn" data-tab="calendar">
+            <i class="fas fa-calendar"></i>
+            <span>CALENDAR</span>
+        </button>
+        <button class="nav-btn" data-tab="packing">
+            <i class="fas fa-suitcase"></i>
+            <span>PACKING</span>
+        </button>
+        <button class="nav-btn" data-tab="budget">
+            <i class="fas fa-coins"></i>
+            <span>BUDGET</span>
+        </button>
+        <button class="nav-btn" data-tab="tourist-spots">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>SPOTS</span>
+        </button>
+        <button class="nav-btn" data-tab="journal">
+            <i class="fas fa-book"></i>
+            <span>JOURNAL</span>
+        </button>
+        <button class="nav-btn" data-tab="profile">
+            <i class="fas fa-user"></i>
+            <span>PROFILE</span>
+        </button>
+        <button class="nav-btn" data-tab="achievements">
+            <i class="fas fa-trophy"></i>
+            <span>BADGES</span>
+        </button>
+        <button class="nav-btn" data-tab="search">
+            <i class="fas fa-search"></i>
+            <span>SEARCH</span>
+        </button>
+    </div>
+
+    <script>
+        // Simple and reliable tab switching
+        function switchTab(tabName) {
+            console.log("Switching to tab:", tabName);
+            
+            // Hide all content sections
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all nav buttons
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show the selected content section
+            const contentToShow = document.getElementById(tabName);
+            if (contentToShow) {
+                contentToShow.classList.add('active');
+            }
+            
+            // Activate the clicked nav button
+            const activeButton = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+            
+            // Load content for the tab
+            if (tabName === 'schedules') {
+                loadSchedules();
+            } else if (tabName === 'goals') {
+                loadGoals();
+            } else if (tabName === 'timeline') {
+                loadTimeline();
+            } else if (tabName === 'calendar') {
+                loadCalendar();
+            } else if (tabName === 'packing') {
+                loadPacking();
+                loadPackingTemplates();
+            } else if (tabName === 'journal') {
+                loadJournal();
+            } else if (tabName === 'tourist-spots') {
+                loadTouristSpots();
+            } else if (tabName === 'budget') {
+                loadBudget();
+            } else if (tabName === 'profile') {
+                loadProfile();
+            } else if (tabName === 'achievements') {
+                loadAchievements();
+            } else if (tabName === 'search') {
+                performSearch();
+            }
+        }
+
+        // Matrix Background
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        const chars = "01";
+        const charArray = chars.split("");
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        
+        for(let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+        
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(5, 5, 15, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "#0aff0a";
+            ctx.font = fontSize + "px monospace";
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                
+                drops[i]++;
+            }
+        }
+        
+        setInterval(drawMatrix, 35);
+
+        // Database
+        const DB = {
+            init: function() {
+                if (!localStorage.getItem('schedules')) {
+                    localStorage.setItem('schedules', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('goals')) {
+                    localStorage.setItem('goals', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('packing')) {
+                    localStorage.setItem('packing', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('journal')) {
+                    localStorage.setItem('journal', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('achievements')) {
+                    localStorage.setItem('achievements', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('favoriteSpots')) {
+                    localStorage.setItem('favoriteSpots', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('budget')) {
+                    localStorage.setItem('budget', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('tripDate')) {
+                    // Set default trip date to 30 days from now
+                    const defaultDate = new Date();
+                    defaultDate.setDate(defaultDate.getDate() + 30);
+                    localStorage.setItem('tripDate', defaultDate.toISOString().split('T')[0]);
+                }
+                if (!localStorage.getItem('profile')) {
+                    // Set default profile
+                    this.saveProfile({
+                        name: 'Traveler',
+                        username: 'explorer',
+                        title: 'Adventure Seeker',
+                        level: 'beginner',
+                        currency: 'PHP',
+                        preferences: ['beach', 'mountain'],
+                        languages: ['english', 'filipino'],
+                        avatar: 'emoji:👤'
+                    });
+                }
+            },
+            
+            getSchedules: function() {
+                return JSON.parse(localStorage.getItem('schedules')) || [];
+            },
+            saveSchedule: function(schedule) {
+                const schedules = this.getSchedules();
+                schedule.id = Date.now().toString();
+                schedules.push(schedule);
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+            },
+            deleteSchedule: function(id) {
+                let schedules = this.getSchedules();
+                schedules = schedules.filter(schedule => schedule.id !== id);
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+            },
+            
+            getGoals: function() {
+                return JSON.parse(localStorage.getItem('goals')) || [];
+            },
+            saveGoal: function(goal) {
+                const goals = this.getGoals();
+                goal.id = Date.now().toString();
+                goal.completed = false;
+                goals.push(goal);
+                localStorage.setItem('goals', JSON.stringify(goals));
+            },
+            deleteGoal: function(id) {
+                let goals = this.getGoals();
+                goals = goals.filter(goal => goal.id !== id);
+                localStorage.setItem('goals', JSON.stringify(goals));
+            },
+            toggleGoal: function(id) {
+                const goals = this.getGoals();
+                const goal = goals.find(goal => goal.id === id);
+                if (goal) {
+                    goal.completed = !goal.completed;
+                    localStorage.setItem('goals', JSON.stringify(goals));
+                }
+            },
+            
+            getPacking: function() {
+                return JSON.parse(localStorage.getItem('packing')) || [];
+            },
+            savePacking: function(item) {
+                const packing = this.getPacking();
+                item.id = Date.now().toString();
+                item.checked = false;
+                packing.push(item);
+                localStorage.setItem('packing', JSON.stringify(packing));
+            },
+            deletePacking: function(id) {
+                let packing = this.getPacking();
+                packing = packing.filter(item => item.id !== id);
+                localStorage.setItem('packing', JSON.stringify(packing));
+            },
+            togglePacking: function(id) {
+                const packing = this.getPacking();
+                const item = packing.find(item => item.id === id);
+                if (item) {
+                    item.checked = !item.checked;
+                    localStorage.setItem('packing', JSON.stringify(packing));
+                }
+            },
+            
+            getJournal: function() {
+                return JSON.parse(localStorage.getItem('journal')) || [];
+            },
+            saveJournal: function(entry) {
+                const journal = this.getJournal();
+                entry.id = Date.now().toString();
+                journal.push(entry);
+                localStorage.setItem('journal', JSON.stringify(journal));
+            },
+            deleteJournal: function(id) {
+                let journal = this.getJournal();
+                journal = journal.filter(entry => entry.id !== id);
+                localStorage.setItem('journal', JSON.stringify(journal));
+            },
+            
+            getAchievements: function() {
+                return JSON.parse(localStorage.getItem('achievements')) || [];
+            },
+            saveAchievements: function(achievements) {
+                localStorage.setItem('achievements', JSON.stringify(achievements));
+            },
+            
+            getFavoriteSpots: function() {
+                return JSON.parse(localStorage.getItem('favoriteSpots')) || [];
+            },
+            toggleFavoriteSpot: function(spotId) {
+                const favorites = this.getFavoriteSpots();
+                const index = favorites.indexOf(spotId);
+                
+                if (index === -1) {
+                    favorites.push(spotId);
+                } else {
+                    favorites.splice(index, 1);
+                }
+                
+                localStorage.setItem('favoriteSpots', JSON.stringify(favorites));
+                return index === -1; // Returns true if added, false if removed
+            },
+            
+            getBudget: function() {
+                return JSON.parse(localStorage.getItem('budget')) || [];
+            },
+            saveBudget: function(budgetItem) {
+                const budget = this.getBudget();
+                budgetItem.id = Date.now().toString();
+                budget.push(budgetItem);
+                localStorage.setItem('budget', JSON.stringify(budget));
+            },
+            deleteBudget: function(id) {
+                let budget = this.getBudget();
+                budget = budget.filter(item => item.id !== id);
+                localStorage.setItem('budget', JSON.stringify(budget));
+            },
+            
+            getTripDate: function() {
+                return localStorage.getItem('tripDate');
+            },
+            setTripDate: function(date) {
+                localStorage.setItem('tripDate', date);
+            },
+            
+            getProfile: function() {
+                return JSON.parse(localStorage.getItem('profile')) || null;
+            },
+            saveProfile: function(profile) {
+                localStorage.setItem('profile', JSON.stringify(profile));
+            },
+            resetProfile: function() {
+                localStorage.removeItem('profile');
+            }
+        };
+
+        // TOURIST SPOTS DATA
+        const TOURIST_SPOTS = [
+            {
+                id: 'spot1',
+                name: 'Boracay Island',
+                region: 'visayas',
+                location: 'Aklan, Western Visayas',
+                category: ['beach', 'top'],
+                description: 'World-famous white sand beach with crystal clear waters, vibrant nightlife, and water sports.',
+                image: 'https://tse3.mm.bing.net/th/id/OIP.xPiWSlAMHHUjZRikNS-UMQHaE7?pid=Api&P=0&w=300&h=300',
+                rating: 4.8,
+                bestFor: ['Beach Lovers', 'Party Goers', 'Water Sports'],
+                bestTime: 'November to April',
+                entryFee: 'Free (varies per activity)'
+            },
+            {
+                id: 'spot2',
+                name: 'Chocolate Hills',
+                region: 'visayas',
+                location: 'Bohol, Central Visayas',
+                category: ['mountain', 'unique'],
+                description: 'Geological formation of at least 1,260 hills that turn brown during dry season.',
+                image: 'https://tse1.mm.bing.net/th/id/OIP.vwvOIcKzaCfEy2kY4aZcBwHaEr?pid=Api&P=0&w=300&h=300',
+                rating: 4.7,
+                bestFor: ['Nature Lovers', 'Photographers', 'Geology Enthusiasts'],
+                bestTime: 'Year-round (Brown: March-May)',
+                entryFee: '₱50-100'
+            },
+            {
+                id: 'spot3',
+                name: 'Banaue Rice Terraces',
+                region: 'luzon',
+                location: 'Ifugao, Cordillera',
+                category: ['mountain', 'historical', 'top'],
+                description: '2,000-year-old terraces carved into mountains by ancestors of the Igorot people.',
+                image: 'https://tse2.mm.bing.net/th/id/OIP.mnY5dSJ08avfmzTI10q5IAHaFj?pid=Api&P=0&w=300&h=300',
+                rating: 4.6,
+                bestFor: ['Culture Enthusiasts', 'Hikers', 'History Buffs'],
+                bestTime: 'February to April',
+                entryFee: '₱50 Environmental Fee'
+            },
+            {
+                id: 'spot4',
+                name: 'Mayon Volcano',
+                region: 'bicol',
+                location: 'Albay, Bicol Region',
+                category: ['mountain', 'top'],
+                description: 'Perfectly symmetrical active volcano, known as the world\'s most perfect cone.',
+                image: 'https://tse2.mm.bing.net/th/id/OIF.AX9mrgdGSeopWpEBbhUhUw?pid=Api&P=0&w=300&h=300',
+                rating: 4.7,
+                bestFor: ['Adventure Seekers', 'Photographers', 'Nature Lovers'],
+                bestTime: 'March to May',
+                entryFee: 'Free (viewing areas)'
+            },
+            {
+                id: 'spot5',
+                name: 'Cagsawa Ruins',
+                region: 'bicol',
+                location: 'Daraga, Albay',
+                category: ['historical'],
+                description: 'Remains of a 16th-century Franciscan church destroyed by Mayon Volcano eruption in 1814.',
+                image: 'https://lakbaypinas.com/wp-content/uploads/2025/04/snapins-ai_3032288557114569818.jpg',
+                rating: 4.5,
+                bestFor: ['History Buffs', 'Photographers', 'Culture Enthusiasts'],
+                bestTime: 'Year-round',
+                entryFee: '₱20-50'
+            },
+            {
+                id: 'spot6',
+                name: 'Intramuros',
+                region: 'luzon',
+                location: 'Manila, Metro Manila',
+                category: ['historical', 'top'],
+                description: 'Walled city from Spanish colonial period with preserved architecture and museums.',
+                image: 'https://images.summitmedia-digital.com/spotph/images/2023/06/20/fort-santiago-1687247428.jpg',
+                rating: 4.4,
+                bestFor: ['History Buffs', 'Photographers', 'Culture Enthusiasts'],
+                bestTime: 'November to February',
+                entryFee: 'Free (varies per attraction)'
+            },
+            {
+                id: 'spot7',
+                name: 'El Nido',
+                region: 'luzon',
+                location: 'Palawan, MIMAROPA',
+                category: ['beach', 'top'],
+                description: 'Paradise of limestone cliffs, hidden beaches, and turquoise lagoons.',
+                image: 'https://tse4.mm.bing.net/th/id/OIP.wpOsr39NyFHgslvHVyOhwwHaE7?pid=Api&P=0&w=300&h=300',
+                rating: 4.9,
+                bestFor: ['Beach Lovers', 'Island Hopping', 'Nature Photographers'],
+                bestTime: 'November to May',
+                entryFee: '₱200 Environmental Fee'
+            },
+            {
+                id: 'spot8',
+                name: 'Siargao Island',
+                region: 'mindanao',
+                location: 'Surigao del Norte',
+                category: ['beach', 'top'],
+                description: 'Surfing capital of the Philippines with cloud 9 wave and tropical island vibe.',
+                image: 'https://tse3.mm.bing.net/th/id/OIP.4yog3txDF6F49Si_4Q-lHAHaFj?pid=Api&P=0&w=300&h=300',
+                rating: 4.7,
+                bestFor: ['Surfers', 'Beach Bums', 'Adventure Travelers'],
+                bestTime: 'March to October (Surfing Season)',
+                entryFee: 'Free'
+            },
+            {
+                id: 'spot9',
+                name: 'Kawasan Falls',
+                region: 'visayas',
+                location: 'Badian, Cebu',
+                category: ['mountain'],
+                description: 'Three-stage waterfall with turquoise water, perfect for canyoneering and swimming.',
+                image: 'https://tse4.mm.bing.net/th/id/OIP.8YBa1zcFlR0O3HMQbmDlswHaE0?pid=Api&P=0&w=300&h=300',
+                rating: 4.6,
+                bestFor: ['Adventure Seekers', 'Nature Lovers', 'Swimmers'],
+                bestTime: 'December to May',
+                entryFee: '₱65 Entrance + Guide Fee'
+            },
+            {
+                id: 'spot10',
+                name: 'Vigan City',
+                region: 'luzon',
+                location: 'Ilocos Sur',
+                category: ['historical', 'top'],
+                description: 'UNESCO World Heritage Site with best-preserved Spanish colonial town in Asia.',
+                image: 'https://a.cdn-hotels.com/gdcs/production17/d878/b37caee3-ea2b-4ace-bd44-c915f8ec7010.jpg',
+                rating: 4.5,
+                bestFor: ['History Buffs', 'Photographers', 'Culture Enthusiasts'],
+                bestTime: 'November to February',
+                entryFee: 'Free (varies per museum)'
+            },
+            {
+                id: 'spot11',
+                name: 'Enchanted River',
+                region: 'mindanao',
+                location: 'Hinatuan, Surigao del Sur',
+                category: ['unique'],
+                description: 'Mysterious deep blue river believed to be enchanted with no known source.',
+                image: 'https://tse4.mm.bing.net/th/id/OIP.v_MIqRMbvKtP4C6uBg3nGgHaD4?pid=Api&P=0&w=300&h=300',
+                rating: 4.5,
+                bestFor: ['Nature Lovers', 'Swimmers', 'Mystery Enthusiasts'],
+                bestTime: 'Year-round',
+                entryFee: '₱30-50'
+            },
+            {
+                id: 'spot12',
+                name: 'Taal Volcano',
+                region: 'luzon',
+                location: 'Batangas, Calabarzon',
+                category: ['mountain'],
+                description: 'Smallest active volcano in the world, featuring a crater lake within a lake.',
+                image: 'https://tse4.mm.bing.net/th/id/OIP.D8D87lVMl4OWDTAYb8TWOAHaFI?pid=Api&P=0&w=300&h=300',
+                rating: 4.4,
+                bestFor: ['Adventure Seekers', 'Nature Lovers', 'Photographers'],
+                bestTime: 'November to April',
+                entryFee: 'Boat Ride + Guide Fee'
+            }
+        ];
+
+        // CURRENCY EXCHANGE RATES (as of recent averages)
+        const EXCHANGE_RATES = {
+            PHP: 1,
+            USD: 56.50,
+            EUR: 61.20,
+            JPY: 0.38,
+            KRW: 0.042,
+            SGD: 41.80,
+            AED: 15.38
+        };
+
+        // PACKING TEMPLATES
+        const PACKING_TEMPLATES = [
+            {
+                name: '🏖️ Beach Vacation',
+                items: [
+                    'Swimsuit/Bikini',
+                    'Beach towel',
+                    'Sunscreen SPF 50+',
+                    'Sunglasses',
+                    'Flip flops',
+                    'Beach bag',
+                    'Hat/Cap',
+                    'Waterproof phone case',
+                    'Beach cover-up',
+                    'Snorkel gear'
+                ]
+            },
+            {
+                name: '⛰️ Mountain Hike',
+                items: [
+                    'Hiking boots',
+                    'Backpack',
+                    'Water bottle',
+                    'Trail snacks',
+                    'First aid kit',
+                    'Rain jacket',
+                    'Trekking poles',
+                    'Headlamp',
+                    'Warm layers',
+                    'Navigation tools'
+                ]
+            },
+            {
+                name: '🏙️ City Tour',
+                items: [
+                    'Comfortable shoes',
+                    'Light backpack',
+                    'City map/guide',
+                    'Power bank',
+                    'Camera',
+                    'Light jacket',
+                    'Wallet with local currency',
+                    'Portable umbrella',
+                    'Tissues/wet wipes',
+                    'Hand sanitizer'
+                ]
+            },
+            {
+                name: '📋 Business Trip',
+                items: [
+                    'Business attire',
+                    'Laptop & charger',
+                    'Documents',
+                    'Business cards',
+                    'Notebook & pen',
+                    'Dress shoes',
+                    'Watch',
+                    'Portable iron',
+                    'Toiletries kit',
+                    'Extra shirts'
+                ]
+            }
+        ];
+
+        // PHILIPPINE FESTIVALS
+        const FESTIVALS = [
+            {
+                name: 'Sinulog Festival',
+                location: 'Cebu City',
+                month: 'January',
+                description: 'Honors the Santo Niño with street dancing and grand parade'
+            },
+            {
+                name: 'Ati-Atihan Festival',
+                location: 'Kalibo, Aklan',
+                month: 'January',
+                description: 'Celebrates the Santo Niño with tribal dancing and face painting'
+            },
+            {
+                name: 'Panagbenga Festival',
+                location: 'Baguio City',
+                month: 'February',
+                description: 'Flower festival with floats made of flowers'
+            },
+            {
+                name: 'Moriones Festival',
+                location: 'Marinduque',
+                month: 'March-April',
+                description: 'Lenten festival with Roman soldier masks'
+            },
+            {
+                name: 'Pahiyas Festival',
+                location: 'Lucban, Quezon',
+                month: 'May',
+                description: 'Decorated houses with agricultural products'
+            },
+            {
+                name: 'Kadayawan Festival',
+                location: 'Davao City',
+                month: 'August',
+                description: 'Thanksgiving for nature\'s bounty with floral floats'
+            },
+            {
+                name: 'MassKara Festival',
+                location: 'Bacolod City',
+                month: 'October',
+                description: 'Mask festival with colorful street dancing'
+            },
+            {
+                name: 'Giant Lantern Festival',
+                location: 'San Fernando, Pampanga',
+                month: 'December',
+                description: 'Christmas lantern competition with giant parols'
+            }
+        ];
+
+        // Form Handlers
+        function handleScheduleSubmit(e) {
+            e.preventDefault();
+            
+            const schedule = {
+                title: document.getElementById('schedule-title').value,
+                date: document.getElementById('schedule-date').value,
+                time: document.getElementById('schedule-time').value,
+                duration: document.getElementById('schedule-duration').value,
+                location: document.getElementById('schedule-location').value,
+                priority: document.getElementById('schedule-priority').value,
+                notes: document.getElementById('schedule-notes').value
+            };
+            
+            DB.saveSchedule(schedule);
+            loadSchedules();
+            loadTimeline();
+            loadCalendar();
+            
+            e.target.reset();
+            showNotification('Schedule added successfully!');
+        }
+        
+        function handleGoalSubmit(e) {
+            e.preventDefault();
+            
+            const goal = {
+                title: document.getElementById('goal-title').value,
+                category: document.getElementById('goal-category').value,
+                deadline: document.getElementById('goal-deadline').value,
+                priority: document.getElementById('goal-priority').value,
+                location: document.getElementById('goal-location').value,
+                notes: document.getElementById('goal-notes').value
+            };
+            
+            DB.saveGoal(goal);
+            loadGoals();
+            loadTimeline();
+            
+            e.target.reset();
+            showNotification('Goal added successfully!');
+        }
+        
+        function handlePackingSubmit(e) {
+            e.preventDefault();
+            
+            const packingItem = {
+                item: document.getElementById('packing-item').value,
+                category: document.getElementById('packing-category').value
+            };
+            
+            DB.savePacking(packingItem);
+            loadPacking();
+            
+            e.target.reset();
+            showNotification('Item added to packing list!');
+        }
+        
+        function handleJournalSubmit(e) {
+            e.preventDefault();
+            
+            const journalEntry = {
+                date: document.getElementById('journal-date').value,
+                title: document.getElementById('journal-title').value,
+                mood: document.getElementById('journal-mood').value,
+                entry: document.getElementById('journal-entry').value
+            };
+            
+            DB.saveJournal(journalEntry);
+            loadJournal();
+            
+            e.target.reset();
+            showNotification('Journal entry saved!');
+        }
+
+        function handleBudgetSubmit(e) {
+            e.preventDefault();
+            
+            const budgetItem = {
+                category: document.getElementById('budget-category').value,
+                amount: parseFloat(document.getElementById('budget-amount').value),
+                notes: document.getElementById('budget-notes').value
+            };
+            
+            DB.saveBudget(budgetItem);
+            loadBudget();
+            
+            e.target.reset();
+            showNotification('Budget item added!');
+        }
+
+        // PROFILE FUNCTIONS
+        function loadProfile() {
+            const profile = DB.getProfile();
+            const container = document.getElementById('profile');
+            
+            if (!profile) return;
+            
+            // Populate form fields
+            if (profile.name) document.getElementById('profile-name').value = profile.name;
+            if (profile.username) document.getElementById('profile-username').value = profile.username;
+            if (profile.birthday) document.getElementById('profile-birthday').value = profile.birthday;
+            if (profile.email) document.getElementById('profile-email').value = profile.email;
+            if (profile.phone) document.getElementById('profile-phone').value = profile.phone;
+            if (profile.location) document.getElementById('profile-location').value = profile.location;
+            if (profile.title) {
+                if (profile.isCustomTitle) {
+                    document.getElementById('profile-title').value = 'Custom';
+                    document.getElementById('profile-title-custom').value = profile.title;
+                    document.getElementById('profile-title-custom').style.display = 'block';
+                } else {
+                    document.getElementById('profile-title').value = profile.title;
+                }
+            }
+            if (profile.bio) document.getElementById('profile-bio').value = profile.bio;
+            if (profile.level) document.getElementById('profile-level').value = profile.level;
+            if (profile.passport) document.getElementById('profile-passport').value = profile.passport;
+            if (profile.currency) document.getElementById('profile-currency').value = profile.currency;
+            
+            // Set preferences
+            if (profile.preferences) {
+                const prefs = profile.preferences;
+                document.getElementById('pref-beach').checked = prefs.includes('beach');
+                document.getElementById('pref-mountain').checked = prefs.includes('mountain');
+                document.getElementById('pref-city').checked = prefs.includes('city');
+                document.getElementById('pref-culture').checked = prefs.includes('culture');
+                document.getElementById('pref-food').checked = prefs.includes('food');
+                document.getElementById('pref-adventure').checked = prefs.includes('adventure');
+                document.getElementById('pref-relax').checked = prefs.includes('relax');
+                document.getElementById('pref-history').checked = prefs.includes('history');
+            }
+            
+            // Set languages
+            if (profile.languages) {
+                document.querySelectorAll('.language-checkbox').forEach(checkbox => {
+                    checkbox.checked = profile.languages.includes(checkbox.value);
+                });
+            }
+            
+            // Update avatar
+            if (profile.avatar) {
+                const avatarContainer = document.getElementById('profile-avatar');
+                const avatarText = document.getElementById('avatar-text');
+                
+                if (profile.avatar.startsWith('data:')) {
+                    // Base64 image
+                    avatarText.style.display = 'none';
+                    if (!avatarContainer.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = profile.avatar;
+                        img.className = 'avatar-preview';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '50%';
+                        avatarContainer.appendChild(img);
+                    }
+                } else if (profile.avatar.startsWith('emoji:')) {
+                    // Emoji avatar
+                    avatarText.textContent = profile.avatar.replace('emoji:', '');
+                }
+            }
+            
+            // Update display
+            updateProfileDisplay();
+            updateProfileStats();
+        }
+        
+        function handleProfileSubmit(e) {
+            e.preventDefault();
+            
+            const profile = {
+                name: document.getElementById('profile-name').value,
+                username: document.getElementById('profile-username').value,
+                birthday: document.getElementById('profile-birthday').value,
+                email: document.getElementById('profile-email').value,
+                phone: document.getElementById('profile-phone').value,
+                location: document.getElementById('profile-location').value,
+                title: document.getElementById('profile-title').value === 'Custom' 
+                    ? document.getElementById('profile-title-custom').value 
+                    : document.getElementById('profile-title').value,
+                isCustomTitle: document.getElementById('profile-title').value === 'Custom',
+                bio: document.getElementById('profile-bio').value,
+                level: document.getElementById('profile-level').value,
+                passport: document.getElementById('profile-passport').value,
+                currency: document.getElementById('profile-currency').value,
+                lastUpdated: new Date().toISOString(),
+                preferences: [],
+                languages: []
+            };
+            
+            // Get preferences
+            const prefs = ['beach', 'mountain', 'city', 'culture', 'food', 'adventure', 'relax', 'history'];
+            prefs.forEach(pref => {
+                if (document.getElementById(`pref-${pref}`).checked) {
+                    profile.preferences.push(pref);
+                }
+            });
+            
+            // Get languages
+            document.querySelectorAll('.language-checkbox:checked').forEach(checkbox => {
+                profile.languages.push(checkbox.value);
+            });
+            
+            // Save avatar if exists
+            const avatarImg = document.querySelector('.avatar-preview');
+            const avatarText = document.getElementById('avatar-text');
+            if (avatarImg) {
+                profile.avatar = avatarImg.src;
+            } else {
+                profile.avatar = `emoji:${avatarText.textContent}`;
+            }
+            
+            DB.saveProfile(profile);
+            updateProfileDisplay();
+            updateProfileStats();
+            
+            showNotification('Profile saved successfully!');
+        }
+        
+        function updateProfileDisplay() {
+            const profile = DB.getProfile();
+            if (!profile) return;
+            
+            if (profile.name) {
+                document.getElementById('profile-name-display').textContent = profile.name;
+            }
+            
+            if (profile.title) {
+                document.getElementById('profile-title-display').textContent = profile.title;
+            }
+            
+            // Update avatar display
+            const avatarContainer = document.getElementById('profile-avatar');
+            const avatarText = document.getElementById('avatar-text');
+            
+            if (profile.avatar) {
+                if (profile.avatar.startsWith('data:')) {
+                    // If we already have an image, no need to change
+                    if (!avatarContainer.querySelector('img')) {
+                        avatarText.style.display = 'none';
+                        const img = document.createElement('img');
+                        img.src = profile.avatar;
+                        img.className = 'avatar-preview';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '50%';
+                        avatarContainer.appendChild(img);
+                    }
+                } else if (profile.avatar.startsWith('emoji:')) {
+                    const emoji = profile.avatar.replace('emoji:', '');
+                    avatarText.textContent = emoji;
+                    avatarText.style.display = 'flex';
+                }
+            }
+        }
+        
+        function updateProfileStats() {
+            const goals = DB.getGoals();
+            const schedules = DB.getSchedules();
+            const achievements = DB.getAchievements();
+            const journal = DB.getJournal();
+            
+            // Count travel goals
+            const travelGoals = goals.filter(g => g.category === 'travel').length;
+            
+            document.getElementById('stat-goals').textContent = goals.length;
+            document.getElementById('stat-trips').textContent = travelGoals;
+            document.getElementById('stat-achievements').textContent = achievements.length;
+            document.getElementById('stat-journal').textContent = journal.length;
+        }
+        
+        function exportProfileData() {
+            const profile = DB.getProfile();
+            if (!profile) {
+                showNotification('No profile data to export');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(profile, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `travel_profile_${profile.username || 'user'}_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification('Profile data exported!');
+        }
+        
+        function resetProfile() {
+            if (confirm('Are you sure you want to reset your profile? This will clear all your personal information.')) {
+                DB.resetProfile();
+                document.getElementById('profile-form').reset();
+                document.getElementById('avatar-text').textContent = '👤';
+                document.getElementById('avatar-text').style.display = 'flex';
+                const avatarImg = document.querySelector('.avatar-preview');
+                if (avatarImg) avatarImg.remove();
+                updateProfileDisplay();
+                showNotification('Profile reset successfully');
+            }
+        }
+
+        // Load Functions
+        function loadSchedules() {
+            const schedules = DB.getSchedules();
+            const container = document.getElementById('schedules-list');
+            
+            if (schedules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-alt"></i>
+                        <p>No schedules yet. Add your first activity!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = schedules.map(schedule => `
+                <div class="item ${schedule.priority}-priority">
+                    <h3>${schedule.title} 
+                        <span style="background: ${schedule.priority === 'high' ? '#ff003c' : schedule.priority === 'medium' ? '#ffdd00' : '#00ff88'}; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 8px; font-size: 0.7rem;">${schedule.priority.toUpperCase()}</span>
+                        ${schedule.location ? `<span style="font-size: 0.7rem; background: #0077b6; color: white; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">📍 ${schedule.location}</span>` : ''}
+                    </h3>
+                    <p>${schedule.notes || 'No additional notes'}</p>
+                    <div class="meta">
+                        <span>📅 ${formatDate(schedule.date)}</span>
+                        <span>⏰ ${schedule.time} (${schedule.duration} min)</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteSchedule('${schedule.id}')">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function loadGoals() {
+            const goals = DB.getGoals();
+            const container = document.getElementById('goals-list');
+            
+            if (goals.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-bullseye"></i>
+                        <p>No goals yet. Set your first goal!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = goals.map(goal => `
+                <div class="item ${goal.priority}-priority">
+                    <h3>${goal.title} 
+                        <span style="font-size: 0.7rem; background: #00b4d8; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">${goal.category.toUpperCase()}</span>
+                        <span style="background: ${goal.priority === 'high' ? '#ff003c' : goal.priority === 'medium' ? '#ffdd00' : '#00ff88'}; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 5px; font-size: 0.7rem;">${goal.priority.toUpperCase()}</span>
+                        ${goal.location ? `<span style="font-size: 0.7rem; background: #0077b6; color: white; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">📍 ${goal.location}</span>` : ''}
+                    </h3>
+                    <p>${goal.notes || 'No action plan specified'}</p>
+                    <div class="meta">
+                        <span>🎯 Target: ${formatDate(goal.deadline)}</span>
+                        <span style="color: ${goal.completed ? '#00ff88' : '#ffdd00'};">${goal.completed ? '✅ Completed' : '⏳ In Progress'}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteGoal('${goal.id}')">Delete</button>
+                    <button class="delete-btn" style="background: ${goal.completed ? 'linear-gradient(135deg, #ffdd00, #ffaa00)' : 'linear-gradient(135deg, #00ff88, #00cc66)'}; margin-left: 8px; color: #050510;" onclick="toggleGoal('${goal.id}')">
+                        ${goal.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function loadTimeline() {
+            const schedules = DB.getSchedules();
+            const goals = DB.getGoals();
+            const container = document.getElementById('timeline-list');
+            
+            const allItems = [
+                ...schedules.map(item => ({ ...item, type: 'schedule' })),
+                ...goals.map(item => ({ ...item, type: 'goal' }))
+            ];
+            
+            if (allItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-stream"></i>
+                        <p>Your timeline is empty. Add schedules and goals to see them here!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            allItems.sort((a, b) => {
+                const dateA = new Date(a.type === 'schedule' ? a.date : a.deadline);
+                const dateB = new Date(b.type === 'schedule' ? b.date : b.deadline);
+                return dateA - dateB;
+            });
+            
+            container.innerHTML = allItems.map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-date">
+                        ${formatDate(item.type === 'schedule' ? item.date : item.deadline)}
+                        <span style="background: ${item.type === 'schedule' ? '#00b4d8' : '#0077b6'}; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 8px; font-size: 0.7rem;">
+                            ${item.type === 'schedule' ? '📅 Schedule' : '🎯 Goal'}
+                        </span>
+                    </div>
+                    <h3>${item.title}</h3>
+                    <p>${item.notes || 'No additional details'}</p>
+                </div>
+            `).join('');
+        }
+        
+        function loadCalendar() {
+            const schedules = DB.getSchedules();
+            const container = document.getElementById('calendar-view');
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            ];
+            
+            let calendarHTML = `<div style="grid-column: 1 / -1; text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.2rem; color: #00ffff;">${monthNames[month]} ${year}</div>`;
+            
+            const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            dayNames.forEach(day => {
+                calendarHTML += `<div style="text-align: center; font-weight: bold; font-size: 0.8rem; color: #80ffaa; padding: 5px;">${day}</div>`;
+            });
+            
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                calendarHTML += `<div class="calendar-day"></div>`;
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const hasEvent = schedules.some(schedule => schedule.date === dateStr);
+                const isToday = now.getDate() === day && now.getMonth() === month && now.getFullYear() === year;
+                
+                calendarHTML += `
+                    <div class="calendar-day ${isToday ? 'active' : ''} ${hasEvent ? 'has-event' : ''}">
+                        ${day}
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = calendarHTML;
+        }
+        
+        function loadPacking() {
+            const packing = DB.getPacking();
+            const container = document.getElementById('packing-list');
+            
+            if (packing.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-suitcase"></i>
+                        <p>No packing items yet. Add your first item!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const categories = {};
+            packing.forEach(item => {
+                if (!categories[item.category]) {
+                    categories[item.category] = [];
+                }
+                categories[item.category].push(item);
+            });
+            
+            container.innerHTML = '';
+            
+            Object.keys(categories).forEach(category => {
+                container.innerHTML += `<h3 style="margin-top: 15px; color: #00ffff;">${category.charAt(0).toUpperCase() + category.slice(1)}</h3>`;
+                
+                categories[category].forEach(item => {
+                    container.innerHTML += `
+                        <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(10, 20, 30, 0.8); border-radius: 5px;">
+                            <input type="checkbox" id="packing-${item.id}" ${item.checked ? 'checked' : ''} onchange="togglePacking('${item.id}')" style="margin-right: 15px;">
+                            <label for="packing-${item.id}" style="${item.checked ? 'text-decoration: line-through; opacity: 0.7;' : ''}; flex-grow: 1;">${item.item}</label>
+                            <button class="delete-btn" style="padding: 5px 10px;" onclick="deletePacking('${item.id}')">Delete</button>
+                        </div>
+                    `;
+                });
+            });
+        }
+        
+        function loadPackingTemplates() {
+            const container = document.getElementById('packing-templates');
+            
+            container.innerHTML = PACKING_TEMPLATES.map(template => `
+                <div class="packing-template" onclick="applyPackingTemplate('${template.name}')">
+                    <h3 style="color: var(--hacker-cyan); margin-bottom: 10px;">${template.name}</h3>
+                    <p style="font-size: 0.8rem; color: #80ffaa;">${template.items.length} essential items</p>
+                </div>
+            `).join('');
+        }
+        
+        function loadJournal() {
+            const journal = DB.getJournal();
+            const container = document.getElementById('journal-list');
+            
+            if (journal.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <p>No journal entries yet. Write your first reflection!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            journal.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const moodIcons = {
+                happy: '😊',
+                neutral: '😐',
+                sad: '😔',
+                excited: '🤩',
+                tired: '😴'
+            };
+            
+            container.innerHTML = journal.map(entry => `
+                <div class="journal-entry">
+                    <div class="journal-date">${formatDate(entry.date)} ${moodIcons[entry.mood]}</div>
+                    <h3>${entry.title}</h3>
+                    <p>${entry.entry}</p>
+                    <button class="delete-btn" onclick="deleteJournal('${entry.id}')">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function loadBudget() {
+            const budget = DB.getBudget();
+            const container = document.getElementById('budget-list');
+            const totalContainer = document.getElementById('budget-total');
+            
+            if (budget.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-coins"></i>
+                        <p>No budget items yet. Add your first expense!</p>
+                    </div>
+                `;
+                totalContainer.innerHTML = '>> TOTAL BUDGET: ₱0.00';
+                return;
+            }
+            
+            const categories = {};
+            let total = 0;
+            
+            budget.forEach(item => {
+                if (!categories[item.category]) {
+                    categories[item.category] = [];
+                }
+                categories[item.category].push(item);
+                total += item.amount;
+            });
+            
+            container.innerHTML = '';
+            
+            Object.keys(categories).forEach(category => {
+                const categoryTotal = categories[category].reduce((sum, item) => sum + item.amount, 0);
+                container.innerHTML += `
+                    <div class="budget-category">
+                        <h3 style="color: var(--hacker-cyan); margin-bottom: 10px;">
+                            ${getBudgetIcon(category)} ${category.toUpperCase()}
+                            <span style="float: right; color: var(--neon-green);">₱${categoryTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        </h3>
+                        ${categories[category].map(item => `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding: 5px 0; border-bottom: 1px solid rgba(0,255,136,0.1);">
+                                <span>${item.notes || 'No description'}</span>
+                                <span style="color: var(--neon-green);">₱${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                <button class="delete-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="deleteBudget('${item.id}')">X</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            });
+            
+            totalContainer.innerHTML = `>> TOTAL BUDGET: ₱${total.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        }
+        
+        function getBudgetIcon(category) {
+            const icons = {
+                accommodation: '🏨',
+                food: '🍔',
+                transportation: '🚗',
+                activities: '🎭',
+                shopping: '🛍️',
+                emergency: '🚨'
+            };
+            return icons[category] || '💰';
+        }
+        
+        function loadTravelTools() {
+            // Load countdown
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+            
+            // Load festival calendar
+            loadFestivalCalendar();
+            
+            // Set default trip date
+            const tripDate = DB.getTripDate();
+            document.getElementById('trip-date').value = tripDate;
+        }
+        
+        function loadFestivalCalendar() {
+            const container = document.getElementById('festival-list');
+            
+            container.innerHTML = FESTIVALS.map(festival => `
+                <div class="festival-card">
+                    <h3 style="color: var(--hacker-cyan); margin-bottom: 5px;">${festival.name}</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem;">
+                        <span>📍 ${festival.location}</span>
+                        <span>📅 ${festival.month}</span>
+                    </div>
+                    <p style="color: #80ffaa; font-size: 0.8rem;">${festival.description}</p>
+                </div>
+            `).join('');
+        }
+        
+        // TOURIST SPOTS FUNCTIONS
+        function loadTouristSpots() {
+            const container = document.getElementById('tourist-spots-list');
+            const searchQuery = document.getElementById('spot-search').value.toLowerCase();
+            const activeRegion = document.querySelector('.region-btn.active')?.dataset.region || 'all';
+            
+            // Filter spots
+            let filteredSpots = TOURIST_SPOTS.filter(spot => {
+                // Search filter
+                const matchesSearch = !searchQuery || 
+                    spot.name.toLowerCase().includes(searchQuery) ||
+                    spot.location.toLowerCase().includes(searchQuery) ||
+                    spot.description.toLowerCase().includes(searchQuery);
+                
+                // Region filter
+                const matchesRegion = activeRegion === 'all' || 
+                    spot.region === activeRegion || 
+                    spot.category.includes(activeRegion);
+                
+                return matchesSearch && matchesRegion;
+            });
+            
+            // Get favorites
+            const favoriteSpots = DB.getFavoriteSpots();
+            
+            if (filteredSpots.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <p>No tourist spots found. Try a different search or filter.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by rating (highest first)
+            filteredSpots.sort((a, b) => b.rating - a.rating);
+            
+            // Display spots
+            container.innerHTML = filteredSpots.map(spot => {
+                const isFavorite = favoriteSpots.includes(spot.id);
+                
+                return `
+                    <div class="spot-card">
+                        <div class="spot-image" style="background-image: url('${spot.image}');">
+                            <div class="spot-overlay">
+                                <h3 class="spot-title">${spot.name}</h3>
+                                <div class="spot-stats">
+                                    <span>⭐ ${spot.rating}/5.0</span>
+                                    <span>📍 ${spot.location}</span>
+                                </div>
+                            </div>
+                            <div style="position: absolute; top: 10px; right: 10px; background: rgba(5,5,15,0.8); padding: 5px 10px; border-radius: 15px; color: ${isFavorite ? '#ffdd00' : '#ffffff'}; cursor: pointer;" 
+                                 onclick="toggleFavoriteSpot('${spot.id}')">
+                                <i class="fas ${isFavorite ? 'fa-star' : 'fa-star'}"></i>
+                            </div>
+                        </div>
+                        <div class="spot-content">
+                            <p class="spot-description">${spot.description}</p>
+                            <div class="spot-details">
+                                <span class="spot-tag">🏆 ${spot.category.includes('top') ? 'Top Destination' : 'Popular'}</span>
+                                <span class="spot-tag">🎯 Best For: ${spot.bestFor[0]}</span>
+                                <span class="spot-tag">📅 Best Time: ${spot.bestTime}</span>
+                                <span class="spot-tag">💰 Entry: ${spot.entryFee}</span>
+                            </div>
+                            <div class="spot-actions">
+                                <button class="add-to-plan-btn" onclick="addSpotToPlan('${spot.id}')">
+                                    <i class="fas fa-plus-circle"></i> Add to Travel Plan
+                                </button>
+                                <button class="view-more-btn" onclick="viewSpotDetails('${spot.id}')">
+                                    <i class="fas fa-info-circle"></i> More Info
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function viewSpotDetails(spotId) {
+            const spot = TOURIST_SPOTS.find(s => s.id === spotId);
+            if (!spot) return;
+            
+            const regionMap = {
+                'luzon': 'Luzon (Northern Philippines)',
+                'visayas': 'Visayas (Central Philippines)',
+                'mindanao': 'Mindanao (Southern Philippines)',
+                'bicol': 'Bicol Region'
+            };
+            
+            const details = `
+                📍 Location: ${spot.location}
+                🏞️ Region: ${regionMap[spot.region] || spot.region.toUpperCase()}
+                ⭐ Rating: ${spot.rating}/5.0
+                🎯 Best For: ${spot.bestFor.join(', ')}
+                📅 Best Time to Visit: ${spot.bestTime}
+                💰 Estimated Cost: ${spot.entryFee}
+                🏷️ Categories: ${spot.category.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}
+                📝 Description:${spot.description}
+            `;
+            
+            if (confirm(`${spot.name}\n\n${details}\n\nAdd to your travel plans?`)) {
+                addSpotToPlan(spotId);
+            }
+        }
+        
+        function addSpotToPlan(spotId) {
+            const spot = TOURIST_SPOTS.find(s => s.id === spotId);
+            if (!spot) return;
+            
+            // Prompt user for trip details
+            const tripDate = prompt(`Enter trip date for ${spot.name} (YYYY-MM-DD):`, 
+                new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]);
+            
+            if (!tripDate) return;
+            
+            // Create a goal for this spot
+            const goal = {
+                title: `Visit ${spot.name}`,
+                category: 'travel',
+                deadline: tripDate,
+                priority: 'medium',
+                location: spot.location,
+                notes: `Destination: ${spot.name}\nDescription: ${spot.description}\nBest For: ${spot.bestFor.join(', ')}\nBest Time: ${spot.bestTime}\nEstimated Cost: ${spot.entryFee}`
+            };
+            
+            DB.saveGoal(goal);
+            showNotification(`${spot.name} added to your travel goals!`);
+            
+            // Switch to goals tab to show the new entry
+            setTimeout(() => {
+                switchTab('goals');
+                loadGoals();
+            }, 500);
+        }
+        
+        function loadAchievements() {
+            const goals = DB.getGoals();
+            const schedules = DB.getSchedules();
+            const journal = DB.getJournal();
+            const packing = DB.getPacking();
+            const favoriteSpots = DB.getFavoriteSpots();
+            const budget = DB.getBudget();
+            
+            const achievements = [];
+            
+            // Basic achievements
+            if (goals.some(goal => goal.completed)) {
+                achievements.push({
+                    title: 'First Goal',
+                    description: 'Completed your first goal',
+                    icon: '🌟'
+                });
+            }
+            
+            if (goals.some(goal => goal.category === 'travel' && goal.completed)) {
+                achievements.push({
+                    title: 'Travel Enthusiast',
+                    description: 'Completed a travel goal',
+                    icon: '🧭'
+                });
+            }
+            
+            if (goals.some(goal => goal.category === 'health' && goal.completed)) {
+                achievements.push({
+                    title: 'Health Champion',
+                    description: 'Completed a health goal',
+                    icon: '💪'
+                });
+            }
+            
+            if (journal.length >= 3) {
+                achievements.push({
+                    title: 'Reflective Mind',
+                    description: 'Wrote 3+ journal entries',
+                    icon: '📝'
+                });
+            }
+            
+            if (schedules.length >= 5) {
+                achievements.push({
+                    title: 'Planner',
+                    description: 'Created 5+ schedules',
+                    icon: '📅'
+                });
+            }
+            
+            if (packing.length >= 10) {
+                achievements.push({
+                    title: 'Prepared Traveler',
+                    description: 'Added 10+ packing items',
+                    icon: '🎒'
+                });
+            }
+            
+            if (favoriteSpots.length >= 3) {
+                achievements.push({
+                    title: 'Explorer',
+                    description: 'Saved 3+ favorite destinations',
+                    icon: '🗺️'
+                });
+            }
+            
+            // New achievements
+            if (favoriteSpots.length >= 5) {
+                achievements.push({
+                    title: 'Travel Guru',
+                    description: 'Saved 5+ Philippine destinations',
+                    icon: '🏆'
+                });
+            }
+            
+            if (budget.length >= 5) {
+                achievements.push({
+                    title: 'Budget Master',
+                    description: 'Tracked 5+ budget items',
+                    icon: '💰'
+                });
+            }
+            
+            // Philippine-specific achievements
+            const luzonSpots = favoriteSpots.filter(id => {
+                const spot = TOURIST_SPOTS.find(s => s.id === id);
+                return spot && spot.region === 'luzon';
+            });
+            
+            if (luzonSpots.length >= 3) {
+                achievements.push({
+                    title: 'Luzon Explorer',
+                    description: 'Saved 3+ Luzon destinations',
+                    icon: '⛰️'
+                });
+            }
+            
+            DB.saveAchievements(achievements);
+            
+            const container = document.getElementById('badges-list');
+            
+            if (achievements.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-trophy"></i>
+                        <p>No achievements yet. Keep using the app to earn badges!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = achievements.map(achievement => `
+                <div class="badge">
+                    <span style="font-size: 1.5rem;">${achievement.icon}</span>
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.9rem;">${achievement.title}</div>
+                        <div style="font-size: 0.75rem;">${achievement.description}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function performSearch() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('search-category').value;
+            const priority = document.getElementById('filter-priority').value;
+            const status = document.getElementById('filter-status').value;
+            
+            let results = [];
+            
+            // Get all data based on category
+            if (category === 'all' || category === 'schedules') {
+                const schedules = DB.getSchedules();
+                results = results.concat(schedules.map(item => ({ ...item, type: 'schedule' })));
+            }
+            
+            if (category === 'all' || category === 'goals') {
+                const goals = DB.getGoals();
+                results = results.concat(goals.map(item => ({ ...item, type: 'goal' })));
+            }
+            
+            if (category === 'all' || category === 'journal') {
+                const journal = DB.getJournal();
+                results = results.concat(journal.map(item => ({ ...item, type: 'journal' })));
+            }
+            
+            if (category === 'all' || category === 'budget') {
+                const budget = DB.getBudget();
+                results = results.concat(budget.map(item => ({ ...item, type: 'budget' })));
+            }
+            
+            if (category === 'all' || category === 'packing') {
+                const packing = DB.getPacking();
+                results = results.concat(packing.map(item => ({ ...item, type: 'packing' })));
+            }
+            
+            // Apply search query filter
+            if (query) {
+                results = results.filter(item => 
+                    item.title && item.title.toLowerCase().includes(query) || 
+                    (item.notes && item.notes.toLowerCase().includes(query)) ||
+                    (item.entry && item.entry.toLowerCase().includes(query)) ||
+                    (item.location && item.location.toLowerCase().includes(query)) ||
+                    (item.item && item.item.toLowerCase().includes(query))
+                );
+            }
+            
+            // Apply priority filter
+            if (priority !== 'all') {
+                results = results.filter(item => item.priority === priority);
+            }
+            
+            // Apply status filter
+            if (status !== 'all' && (category === 'all' || category === 'goals')) {
+                results = results.filter(item => 
+                    item.type !== 'goal' || 
+                    (status === 'completed' && item.completed) ||
+                    (status === 'in-progress' && !item.completed)
+                );
+            }
+            
+            const container = document.getElementById('search-results');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No results found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Display results
+            container.innerHTML = results.map(item => {
+                if (item.type === 'schedule') {
+                    return `
+                        <div class="item ${item.priority}-priority">
+                            <h3>${item.title} 
+                                <span style="font-size: 0.65rem; background: #00b4d8; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">Schedule</span>
+                            </h3>
+                            <p>${item.notes || 'No additional notes'}</p>
+                            <div class="meta">
+                                <span>📅 ${formatDate(item.date)}</span>
+                                <span>⏰ ${item.time}</span>
+                            </div>
+                        </div>
+                    `;
+                } else if (item.type === 'goal') {
+                    return `
+                        <div class="item ${item.priority}-priority">
+                            <h3>${item.title} 
+                                <span style="font-size: 0.65rem; background: #0077b6; color: white; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">Goal</span>
+                            </h3>
+                            <p>${item.notes || 'No action plan specified'}</p>
+                            <div class="meta">
+                                <span>🎯 Target: ${formatDate(item.deadline)}</span>
+                                <span style="color: ${item.completed ? '#00ff88' : '#ffdd00'};">${item.completed ? '✅ Completed' : '⏳ In Progress'}</span>
+                            </div>
+                        </div>
+                    `;
+                } else if (item.type === 'journal') {
+                    const moodIcons = {
+                        happy: '😊',
+                        neutral: '😐',
+                        sad: '😔',
+                        excited: '🤩',
+                        tired: '😴'
+                    };
+                    
+                    return `
+                        <div class="journal-entry">
+                            <div class="journal-date">${formatDate(item.date)} ${moodIcons[item.mood]}</div>
+                            <h3>${item.title}</h3>
+                            <p>${item.entry.substring(0, 100)}${item.entry.length > 100 ? '...' : ''}</p>
+                        </div>
+                    `;
+                } else if (item.type === 'budget') {
+                    return `
+                        <div class="budget-category">
+                            <h3 style="color: var(--hacker-cyan); margin-bottom: 10px;">
+                                ${getBudgetIcon(item.category)} ${item.category.toUpperCase()}
+                                <span style="float: right; color: var(--neon-green);">₱${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            </h3>
+                            <p>${item.notes || 'No description'}</p>
+                        </div>
+                    `;
+                } else if (item.type === 'packing') {
+                    return `
+                        <div class="item">
+                            <h3>${item.item} 
+                                <span style="font-size: 0.65rem; background: #00b4d8; color: #050510; padding: 3px 8px; border-radius: 3px; margin-left: 5px;">Packing</span>
+                            </h3>
+                            <p>Category: ${item.category}</p>
+                            <div class="meta">
+                                <span>${item.checked ? '✅ Packed' : '📦 Not Packed'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // NEW TRAVEL FEATURES FUNCTIONS
+        function convertCurrency() {
+            const amount = parseFloat(document.getElementById('amount-input').value);
+            const fromCurrency = document.getElementById('from-currency').value;
+            const toCurrency = document.getElementById('to-currency').value;
+            
+            if (isNaN(amount) || amount <= 0) {
+                showNotification('Please enter a valid amount');
+                return;
+            }
+            
+            // Convert to PHP first, then to target currency
+            const amountInPHP = amount * EXCHANGE_RATES[fromCurrency];
+            const convertedAmount = amountInPHP / EXCHANGE_RATES[toCurrency];
+            
+            document.getElementById('converted-amount').value = convertedAmount.toFixed(2);
+            
+            const resultDiv = document.getElementById('conversion-result');
+            resultDiv.innerHTML = `
+                >> ${amount.toFixed(2)} ${fromCurrency} = ${convertedAmount.toFixed(2)} ${toCurrency}
+                <br><small>1 ${fromCurrency} = ${(1 / EXCHANGE_RATES[fromCurrency] * EXCHANGE_RATES[toCurrency]).toFixed(4)} ${toCurrency}</small>
+            `;
+        }
+        
+        function updateCountdown() {
+            const tripDate = new Date(DB.getTripDate());
+            const now = new Date();
+            
+            const difference = tripDate - now;
+            
+            if (difference < 0) {
+                document.getElementById('countdown-display').innerHTML = `
+                    <div style="text-align: center; color: var(--hacker-cyan);">
+                        >> TRIP HAS STARTED! <<
+                    </div>
+                `;
+                return;
+            }
+            
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            
+            document.getElementById('countdown-display').innerHTML = `
+                <div class="countdown-unit">
+                    <div class="countdown-value">${days.toString().padStart(2, '0')}</div>
+                    <div class="countdown-label">DAYS</div>
+                </div>
+                <div class="countdown-unit">
+                    <div class="countdown-value">${hours.toString().padStart(2, '0')}</div>
+                    <div class="countdown-label">HOURS</div>
+                </div>
+                <div class="countdown-unit">
+                    <div class="countdown-value">${minutes.toString().padStart(2, '0')}</div>
+                    <div class="countdown-label">MINUTES</div>
+                </div>
+                <div class="countdown-unit">
+                    <div class="countdown-value">${seconds.toString().padStart(2, '0')}</div>
+                    <div class="countdown-label">SECONDS</div>
+                </div>
+            `;
+        }
+        
+        function setTripCountdown() {
+            const tripDateInput = document.getElementById('trip-date').value;
+            
+            if (!tripDateInput) {
+                showNotification('Please select a trip date');
+                return;
+            }
+            
+            DB.setTripDate(tripDateInput);
+            updateCountdown();
+            showNotification('Trip countdown updated!');
+        }
+        
+        function applyPackingTemplate(templateName) {
+            const template = PACKING_TEMPLATES.find(t => t.name === templateName);
+            
+            if (!template) return;
+            
+            if (confirm(`Add all ${template.items.length} items from "${templateName}" to your packing list?`)) {
+                template.items.forEach(item => {
+                    const packingItem = {
+                        item: item,
+                        category: 'essentials'
+                    };
+                    DB.savePacking(packingItem);
+                });
+                
+                loadPacking();
+                showNotification(`${template.items.length} items added from ${templateName} template!`);
+            }
+        }
+
+        // Delete Functions
+        window.deleteSchedule = function(id) {
+            if (confirm('Delete this schedule?')) {
+                DB.deleteSchedule(id);
+                loadSchedules();
+                loadTimeline();
+                loadCalendar();
+                showNotification('Schedule deleted');
+            }
+        }
+        
+        window.deleteGoal = function(id) {
+            if (confirm('Delete this goal?')) {
+                DB.deleteGoal(id);
+                loadGoals();
+                loadTimeline();
+                loadAchievements();
+                showNotification('Goal deleted');
+            }
+        }
+        
+        window.toggleGoal = function(id) {
+            DB.toggleGoal(id);
+            loadGoals();
+            loadTimeline();
+            loadAchievements();
+            showNotification('Goal status updated');
+        }
+        
+        window.deletePacking = function(id) {
+            if (confirm('Delete this packing item?')) {
+                DB.deletePacking(id);
+                loadPacking();
+                showNotification('Item deleted');
+            }
+        }
+        
+        window.togglePacking = function(id) {
+            DB.togglePacking(id);
+            loadPacking();
+        }
+        
+        window.deleteJournal = function(id) {
+            if (confirm('Delete this journal entry?')) {
+                DB.deleteJournal(id);
+                loadJournal();
+                loadAchievements();
+                showNotification('Journal entry deleted');
+            }
+        }
+        
+        window.deleteBudget = function(id) {
+            if (confirm('Delete this budget item?')) {
+                DB.deleteBudget(id);
+                loadBudget();
+                showNotification('Budget item deleted');
+            }
+        }
+        
+        // Tourist Spots Functions
+        window.toggleFavoriteSpot = function(spotId) {
+            const added = DB.toggleFavoriteSpot(spotId);
+            loadTouristSpots();
+            loadAchievements();
+            showNotification(added ? 'Added to favorites!' : 'Removed from favorites');
+        }
+
+        // Helper Functions
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #00ff88, #00b4d8);
+                color: #050510;
+                padding: 10px 20px;
+                border-radius: 5px;
+                box-shadow: 0 0 20px #00ff88;
+                z-index: 1000;
+                font-weight: 600;
+                animation: slideDown 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 2000);
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("App initializing...");
+            
+            // Initialize database
+            DB.init();
+            
+            // Setup navigation
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    console.log("Button clicked:", this);
+                    const tabName = this.getAttribute('data-tab');
+                    console.log("Tab to switch:", tabName);
+                    if (tabName) {
+                        switchTab(tabName);
+                    }
+                });
+            });
+            
+            // Setup form handlers
+            document.getElementById('schedule-form').addEventListener('submit', handleScheduleSubmit);
+            document.getElementById('goal-form').addEventListener('submit', handleGoalSubmit);
+            document.getElementById('packing-form').addEventListener('submit', handlePackingSubmit);
+            document.getElementById('journal-form').addEventListener('submit', handleJournalSubmit);
+            document.getElementById('budget-form').addEventListener('submit', handleBudgetSubmit);
+            document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
+            
+            // Setup mood selector
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.mood-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('journal-mood').value = this.dataset.mood;
+                });
+            });
+            
+            // Setup search and filter
+            document.getElementById('search-input').addEventListener('input', performSearch);
+            document.getElementById('search-category').addEventListener('change', performSearch);
+            document.getElementById('filter-priority').addEventListener('change', performSearch);
+            document.getElementById('filter-status').addEventListener('change', performSearch);
+            
+            // Setup tourist spots search and filter
+            document.getElementById('spot-search').addEventListener('input', loadTouristSpots);
+            
+            // Setup region filter buttons
+            document.querySelectorAll('.region-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    loadTouristSpots();
+                });
+            });
+            
+            // Setup currency converter
+            document.getElementById('amount-input').addEventListener('input', convertCurrency);
+            document.getElementById('from-currency').addEventListener('change', convertCurrency);
+            document.getElementById('to-currency').addEventListener('change', convertCurrency);
+            
+            // Profile avatar upload
+            document.getElementById('profile-avatar').addEventListener('click', function() {
+                document.getElementById('avatar-upload').click();
+            });
+
+            document.getElementById('avatar-upload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const avatarContainer = document.getElementById('profile-avatar');
+                        const avatarText = document.getElementById('avatar-text');
+                        
+                        avatarText.style.display = 'none';
+                        
+                        // Remove existing image if any
+                        const existingImg = avatarContainer.querySelector('img');
+                        if (existingImg) {
+                            existingImg.src = event.target.result;
+                        } else {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.className = 'avatar-preview';
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = 'cover';
+                            img.style.borderRadius = '50%';
+                            avatarContainer.appendChild(img);
+                        }
+                        
+                        // Save immediately
+                        const profile = DB.getProfile();
+                        if (profile) {
+                            profile.avatar = event.target.result;
+                            DB.saveProfile(profile);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Custom title handling
+            document.getElementById('profile-title').addEventListener('change', function() {
+                const customInput = document.getElementById('profile-title-custom');
+                customInput.style.display = this.value === 'Custom' ? 'block' : 'none';
+            });
+            
+            // Set default dates to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('schedule-date').value = today;
+            document.getElementById('goal-deadline').value = today;
+            document.getElementById('journal-date').value = today;
+            document.getElementById('profile-birthday').value = today;
+            
+            // Set default mood
+            document.querySelector('.mood-option[data-mood="neutral"]').classList.add('active');
+            
+            // Load initial data
+            loadSchedules();
+            loadProfile();
+            
+            console.log("App initialized successfully!");
+            
+            // Add CSS for notification animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { top: -50px; opacity: 0; }
+                    to { top: 20px; opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { top: 20px; opacity: 1; }
+                    to { top: -50px; opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
